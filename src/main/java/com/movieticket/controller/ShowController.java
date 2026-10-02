@@ -1,11 +1,16 @@
 package com.movieticket.controller;
 
+import com.movieticket.model.Movie;
 import com.movieticket.model.Show;
+import com.movieticket.model.Theatre;
+import com.movieticket.service.MovieService;
 import com.movieticket.service.ShowService;
+import com.movieticket.service.TheatreService;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Logger;
@@ -16,10 +21,14 @@ public class ShowController {
             Logger.getLogger(ShowController.class.getName());
 
     private final ShowService showService;
+    private final TheatreService theatreService;
+    private final MovieService movieService;
     private final Scanner scanner;
 
     public ShowController() {
         showService = new ShowService();
+        theatreService = new TheatreService();
+        movieService = new MovieService();
         scanner = new Scanner(System.in);
     }
 
@@ -40,8 +49,7 @@ public class ShowController {
             logger.info("5. Delete Show");
             logger.info("6. Back");
             logger.info("========================================");
-
-            System.out.print("Enter your choice: ");
+            logger.info("Enter your choice:");
 
             int choice = scanner.nextInt();
             scanner.nextLine();
@@ -92,34 +100,42 @@ public class ShowController {
 
         Show show = new Show();
 
-        System.out.print("Enter theatre ID: ");
-        show.setTheatreId(scanner.nextInt());
-        scanner.nextLine();
+        Theatre theatre = selectTheatre();
 
-        System.out.print("Enter movie ID: ");
-        show.setMovieId(scanner.nextInt());
-        scanner.nextLine();
+        if (theatre == null) {
+            return;
+        }
 
-        System.out.print("Enter show date (YYYY-MM-DD): ");
-        String showDate = scanner.nextLine();
+        Movie movie = selectMovie();
 
-        show.setShowDate(
-                LocalDate.parse(showDate)
-        );
+        if (movie == null) {
+            return;
+        }
 
-        System.out.print("Enter start time (HH:MM): ");
-        String startTime = scanner.nextLine();
+        show.setTheatreId(theatre.getTheatreId());
+        show.setMovieId(movie.getMovieId());
 
-        show.setStartTime(
-                LocalTime.parse(startTime)
-        );
+        logger.info("Selected Theatre: " + theatre.getName());
+        logger.info("Selected Movie: " + movie.getTitle());
 
-        System.out.print("Enter end time (HH:MM): ");
-        String endTime = scanner.nextLine();
+        logger.info("Enter show date (YYYY-MM-DD):");
 
-        show.setEndTime(
-                LocalTime.parse(endTime)
-        );
+        LocalDate showDate =
+                LocalDate.parse(scanner.nextLine());
+
+        logger.info("Enter start time (HH:MM):");
+
+        LocalTime startTime =
+                LocalTime.parse(scanner.nextLine());
+
+        logger.info("Enter end time (HH:MM):");
+
+        LocalTime endTime =
+                LocalTime.parse(scanner.nextLine());
+
+        show.setShowDate(showDate);
+        show.setStartTime(startTime);
+        show.setEndTime(endTime);
 
         showService.addShow(show);
 
@@ -134,23 +150,99 @@ public class ShowController {
         List<Show> shows =
                 showService.getAllShows();
 
+        List<Theatre> theatres =
+                theatreService.getAllTheatres();
+
+        List<Movie> movies =
+                movieService.getAllMovies();
+
         if (shows.isEmpty()) {
             logger.info("No shows found.");
             return;
         }
 
-        for (Show show : shows) {
+        for (Theatre theatre : theatres) {
 
-            logger.info("----------------------------------------");
-            logger.info("Show ID     : " + show.getShowId());
-            logger.info("Theatre ID  : " + show.getTheatreId());
-            logger.info("Movie ID    : " + show.getMovieId());
-            logger.info("Show Date   : " + show.getShowDate());
-            logger.info("Start Time  : " + show.getStartTime());
-            logger.info("End Time    : " + show.getEndTime());
+            List<Show> theatreShows =
+                    new ArrayList<>();
+
+            for (Show show : shows) {
+
+                if (show.getTheatreId() ==
+                        theatre.getTheatreId()) {
+
+                    theatreShows.add(show);
+                }
+            }
+
+            if (theatreShows.isEmpty()) {
+                continue;
+            }
+
+            logger.info("");
+            logger.info("THEATRE: " + theatre.getName());
+            logger.info("========================================");
+
+            List<Integer> displayedMovieIds =
+                    new ArrayList<>();
+
+            for (Show show : theatreShows) {
+
+                if (displayedMovieIds.contains(
+                        show.getMovieId())) {
+
+                    continue;
+                }
+
+                displayedMovieIds.add(show.getMovieId());
+
+                Movie movie = null;
+
+                for (Movie currentMovie : movies) {
+
+                    if (currentMovie.getMovieId() ==
+                            show.getMovieId()) {
+
+                        movie = currentMovie;
+                        break;
+                    }
+                }
+
+                if (movie == null) {
+                    continue;
+                }
+
+                logger.info("");
+                logger.info("MOVIE: " + movie.getTitle());
+                logger.info("----------------------------------------");
+
+                for (Show movieShow : theatreShows) {
+
+                    if (movieShow.getMovieId() ==
+                            movie.getMovieId()) {
+
+                        logger.info(
+                                "Show Date  : "
+                                        + movieShow.getShowDate()
+                        );
+
+                        logger.info(
+                                "Start Time : "
+                                        + movieShow.getStartTime()
+                        );
+
+                        logger.info(
+                                "End Time   : "
+                                        + movieShow.getEndTime()
+                        );
+
+                        logger.info("");
+                    }
+                }
+            }
         }
 
-        logger.info("----------------------------------------");
+        logger.info("========================================");
     }
 
     private void viewShowById() throws SQLException {
@@ -158,7 +250,7 @@ public class ShowController {
         logger.info("");
         logger.info("========== FIND SHOW ==========");
 
-        System.out.print("Enter show ID: ");
+        logger.info("Enter show ID:");
 
         int showId = scanner.nextInt();
         scanner.nextLine();
@@ -171,12 +263,51 @@ public class ShowController {
             return;
         }
 
-        logger.info("Show ID     : " + show.getShowId());
-        logger.info("Theatre ID  : " + show.getTheatreId());
-        logger.info("Movie ID    : " + show.getMovieId());
-        logger.info("Show Date   : " + show.getShowDate());
-        logger.info("Start Time  : " + show.getStartTime());
-        logger.info("End Time    : " + show.getEndTime());
+        Movie movie =
+                movieService.getMovieById(
+                        show.getMovieId()
+                );
+
+        Theatre theatre =
+                theatreService.getTheatreById(
+                        show.getTheatreId()
+                );
+
+        logger.info(
+                "Show ID     : "
+                        + show.getShowId()
+        );
+
+        if (movie != null) {
+
+            logger.info(
+                    "Movie       : "
+                            + movie.getTitle()
+            );
+        }
+
+        if (theatre != null) {
+
+            logger.info(
+                    "Theatre     : "
+                            + theatre.getName()
+            );
+        }
+
+        logger.info(
+                "Show Date   : "
+                        + show.getShowDate()
+        );
+
+        logger.info(
+                "Start Time  : "
+                        + show.getStartTime()
+        );
+
+        logger.info(
+                "End Time    : "
+                        + show.getEndTime()
+        );
     }
 
     private void updateShow() throws SQLException {
@@ -184,54 +315,94 @@ public class ShowController {
         logger.info("");
         logger.info("========== UPDATE SHOW ==========");
 
-        System.out.print("Enter show ID: ");
+        Theatre theatre = selectTheatre();
 
-        int showId = scanner.nextInt();
-        scanner.nextLine();
-
-        Show show =
-                showService.getShowById(showId);
-
-        if (show == null) {
-            logger.info("Show not found.");
+        if (theatre == null) {
             return;
         }
 
-        logger.info("Current theatre ID: " + show.getTheatreId());
-        System.out.print("Enter new theatre ID: ");
-        show.setTheatreId(scanner.nextInt());
-        scanner.nextLine();
+        Show show = selectShowFromTheatre(theatre);
 
-        logger.info("Current movie ID: " + show.getMovieId());
-        System.out.print("Enter new movie ID: ");
-        show.setMovieId(scanner.nextInt());
-        scanner.nextLine();
+        if (show == null) {
+            return;
+        }
 
-        logger.info("Current show date: " + show.getShowDate());
-        System.out.print("Enter new show date (YYYY-MM-DD): ");
+        Movie movie =
+                movieService.getMovieById(
+                        show.getMovieId()
+                );
 
-        String showDate = scanner.nextLine();
+        logger.info(
+                "Selected Theatre: "
+                        + theatre.getName()
+        );
+
+        if (movie != null) {
+
+            logger.info(
+                    "Current Movie: "
+                            + movie.getTitle()
+            );
+        }
+
+        Movie selectedMovie = selectMovie();
+
+        if (selectedMovie == null) {
+            return;
+        }
+
+        show.setMovieId(
+                selectedMovie.getMovieId()
+        );
+
+        logger.info(
+                "Selected Movie: "
+                        + selectedMovie.getTitle()
+        );
+
+        logger.info(
+                "Current show date: "
+                        + show.getShowDate()
+        );
+
+        logger.info(
+                "Enter new show date (YYYY-MM-DD):"
+        );
 
         show.setShowDate(
-                LocalDate.parse(showDate)
+                LocalDate.parse(
+                        scanner.nextLine()
+                )
         );
 
-        logger.info("Current start time: " + show.getStartTime());
-        System.out.print("Enter new start time (HH:MM): ");
+        logger.info(
+                "Current start time: "
+                        + show.getStartTime()
+        );
 
-        String startTime = scanner.nextLine();
+        logger.info(
+                "Enter new start time (HH:MM):"
+        );
 
         show.setStartTime(
-                LocalTime.parse(startTime)
+                LocalTime.parse(
+                        scanner.nextLine()
+                )
         );
 
-        logger.info("Current end time: " + show.getEndTime());
-        System.out.print("Enter new end time (HH:MM): ");
+        logger.info(
+                "Current end time: "
+                        + show.getEndTime()
+        );
 
-        String endTime = scanner.nextLine();
+        logger.info(
+                "Enter new end time (HH:MM):"
+        );
 
         show.setEndTime(
-                LocalTime.parse(endTime)
+                LocalTime.parse(
+                        scanner.nextLine()
+                )
         );
 
         showService.updateShow(show);
@@ -244,30 +415,63 @@ public class ShowController {
         logger.info("");
         logger.info("========== DELETE SHOW ==========");
 
-        System.out.print("Enter show ID: ");
+        Theatre theatre = selectTheatre();
 
-        int showId = scanner.nextInt();
-        scanner.nextLine();
-
-        Show show =
-                showService.getShowById(showId);
-
-        if (show == null) {
-            logger.info("Show not found.");
+        if (theatre == null) {
             return;
         }
 
-        logger.info("Show ID: " + show.getShowId());
+        Show show = selectShowFromTheatre(theatre);
 
-        System.out.print(
-                "Are you sure you want to delete this show? (Y/N): "
+        if (show == null) {
+            return;
+        }
+
+        Movie movie =
+                movieService.getMovieById(
+                        show.getMovieId()
+                );
+
+        logger.info(
+                "Selected Theatre: "
+                        + theatre.getName()
         );
 
-        String confirmation = scanner.nextLine();
+        if (movie != null) {
+
+            logger.info(
+                    "Selected Movie: "
+                            + movie.getTitle()
+            );
+        }
+
+        logger.info(
+                "Show Date: "
+                        + show.getShowDate()
+        );
+
+        logger.info(
+                "Start Time: "
+                        + show.getStartTime()
+        );
+
+        logger.info(
+                "End Time: "
+                        + show.getEndTime()
+        );
+
+        logger.info(
+                "Are you sure you want to delete this show? (Y/N):"
+        );
+
+        String confirmation =
+                scanner.nextLine();
 
         if (confirmation.equalsIgnoreCase("Y")) {
 
-            showService.deleteShow(showId);
+            showService.deleteShow(
+                    show.getShowId()
+            );
 
             logger.info("Show deleted successfully.");
 
@@ -275,5 +479,268 @@ public class ShowController {
 
             logger.info("Delete operation cancelled.");
         }
+    }
+
+    private Show selectShowFromTheatre(
+            Theatre theatre) throws SQLException {
+
+        List<Show> shows =
+                showService.getAllShows();
+
+        List<Movie> movies =
+                movieService.getAllMovies();
+
+        List<Show> theatreShows =
+                new ArrayList<>();
+
+        for (Show show : shows) {
+
+            if (show.getTheatreId() ==
+                    theatre.getTheatreId()) {
+
+                theatreShows.add(show);
+            }
+        }
+
+        if (theatreShows.isEmpty()) {
+
+            logger.info(
+                    "No shows found in "
+                            + theatre.getName()
+            );
+
+            return null;
+        }
+
+        logger.info("");
+        logger.info(
+                "Shows available in "
+                        + theatre.getName()
+                        + ":"
+        );
+
+        for (int i = 0;
+             i < theatreShows.size();
+             i++) {
+
+            Show show =
+                    theatreShows.get(i);
+
+            Movie movie = null;
+
+            for (Movie currentMovie : movies) {
+
+                if (currentMovie.getMovieId() ==
+                        show.getMovieId()) {
+
+                    movie = currentMovie;
+                    break;
+                }
+            }
+
+            String movieName =
+                    movie != null
+                            ? movie.getTitle()
+                            : "Unknown Movie";
+
+            logger.info(
+                    (i + 1)
+                            + ". "
+                            + movieName
+                            + " | "
+                            + show.getShowDate()
+                            + " | "
+                            + show.getStartTime()
+                            + " - "
+                            + show.getEndTime()
+            );
+        }
+
+        logger.info("Select show:");
+
+        int showChoice =
+                scanner.nextInt();
+
+        scanner.nextLine();
+
+        if (showChoice < 1 ||
+                showChoice > theatreShows.size()) {
+
+            logger.warning(
+                    "Invalid show selection."
+            );
+
+            return null;
+        }
+
+        return theatreShows.get(
+                showChoice - 1
+        );
+    }
+
+    private Theatre selectTheatre()
+            throws SQLException {
+
+        logger.info("Enter theatre name:");
+
+        String searchText =
+                scanner.nextLine().trim();
+
+        if (searchText.isEmpty()) {
+
+            logger.info(
+                    "Theatre name cannot be empty."
+            );
+
+            return null;
+        }
+
+        List<Theatre> theatres =
+                theatreService.getAllTheatres();
+
+        List<Theatre> matchingTheatres =
+                new ArrayList<>();
+
+        for (Theatre theatre : theatres) {
+
+            if (theatre.getName() != null &&
+                    theatre.getName()
+                            .toLowerCase()
+                            .contains(
+                                    searchText.toLowerCase()
+                            )) {
+
+                matchingTheatres.add(theatre);
+            }
+        }
+
+        if (matchingTheatres.isEmpty()) {
+
+            logger.info(
+                    "No matching theatres found."
+            );
+
+            return null;
+        }
+
+        logger.info("");
+        logger.info("Matching Theatres:");
+
+        for (int i = 0;
+             i < matchingTheatres.size();
+             i++) {
+
+            logger.info(
+                    (i + 1)
+                            + ". "
+                            + matchingTheatres
+                            .get(i)
+                            .getName()
+            );
+        }
+
+        logger.info("Select theatre:");
+
+        int theatreChoice =
+                scanner.nextInt();
+
+        scanner.nextLine();
+
+        if (theatreChoice < 1 ||
+                theatreChoice > matchingTheatres.size()) {
+
+            logger.warning(
+                    "Invalid theatre selection."
+            );
+
+            return null;
+        }
+
+        return matchingTheatres.get(
+                theatreChoice - 1
+        );
+    }
+
+    private Movie selectMovie()
+            throws SQLException {
+
+        logger.info("Enter movie name:");
+
+        String searchText =
+                scanner.nextLine().trim();
+
+        if (searchText.isEmpty()) {
+
+            logger.info(
+                    "Movie name cannot be empty."
+            );
+
+            return null;
+        }
+
+        List<Movie> movies =
+                movieService.getAllMovies();
+
+        List<Movie> matchingMovies =
+                new ArrayList<>();
+
+        for (Movie movie : movies) {
+
+            if (movie.getTitle() != null &&
+                    movie.getTitle()
+                            .toLowerCase()
+                            .contains(
+                                    searchText.toLowerCase()
+                            )) {
+
+                matchingMovies.add(movie);
+            }
+        }
+
+        if (matchingMovies.isEmpty()) {
+
+            logger.info(
+                    "No matching movies found."
+            );
+
+            return null;
+        }
+
+        logger.info("");
+        logger.info("Matching Movies:");
+
+        for (int i = 0;
+             i < matchingMovies.size();
+             i++) {
+
+            logger.info(
+                    (i + 1)
+                            + ". "
+                            + matchingMovies
+                            .get(i)
+                            .getTitle()
+            );
+        }
+
+        logger.info("Select movie:");
+
+        int movieChoice =
+                scanner.nextInt();
+
+        scanner.nextLine();
+
+        if (movieChoice < 1 ||
+                movieChoice > matchingMovies.size()) {
+
+            logger.warning(
+                    "Invalid movie selection."
+            );
+
+            return null;
+        }
+
+        return matchingMovies.get(
+                movieChoice - 1
+        );
     }
 }

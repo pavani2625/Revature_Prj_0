@@ -1,9 +1,14 @@
 package com.movieticket.controller;
 
+import com.movieticket.model.Seat;
+import com.movieticket.model.Show;
 import com.movieticket.model.Theatre;
+import com.movieticket.service.SeatService;
+import com.movieticket.service.ShowService;
 import com.movieticket.service.TheatreService;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Logger;
@@ -14,10 +19,14 @@ public class TheatreController {
             Logger.getLogger(TheatreController.class.getName());
 
     private final TheatreService theatreService;
+    private final SeatService seatService;
+    private final ShowService showService;
     private final Scanner scanner;
 
     public TheatreController() {
         theatreService = new TheatreService();
+        seatService = new SeatService();
+        showService = new ShowService();
         scanner = new Scanner(System.in);
     }
 
@@ -38,8 +47,7 @@ public class TheatreController {
             logger.info("5. Delete Theatre");
             logger.info("6. Back");
             logger.info("========================================");
-
-            System.out.print("Enter your choice: ");
+            logger.info("Enter your choice:");
 
             int choice = scanner.nextInt();
             scanner.nextLine();
@@ -90,16 +98,16 @@ public class TheatreController {
 
         Theatre theatre = new Theatre();
 
-        System.out.print("Enter theatre name: ");
+        logger.info("Enter theatre name:");
         theatre.setName(scanner.nextLine());
 
-        System.out.print("Enter city: ");
+        logger.info("Enter city:");
         theatre.setCity(scanner.nextLine());
 
-        System.out.print("Enter address: ");
+        logger.info("Enter address:");
         theatre.setAddress(scanner.nextLine());
 
-        System.out.print("Enter total seats: ");
+        logger.info("Enter total seats:");
         theatre.setTotalSeats(scanner.nextInt());
         scanner.nextLine();
 
@@ -139,7 +147,7 @@ public class TheatreController {
         logger.info("");
         logger.info("========== FIND THEATRE ==========");
 
-        System.out.print("Enter theatre ID: ");
+        logger.info("Enter theatre ID:");
 
         int theatreId = scanner.nextInt();
         scanner.nextLine();
@@ -164,33 +172,87 @@ public class TheatreController {
         logger.info("");
         logger.info("========== UPDATE THEATRE ==========");
 
-        System.out.print("Enter theatre ID: ");
+        logger.info("Enter theatre name:");
 
-        int theatreId = scanner.nextInt();
-        scanner.nextLine();
+        String searchText = scanner.nextLine().trim();
 
-        Theatre theatre =
-                theatreService.getTheatreById(theatreId);
-
-        if (theatre == null) {
-            logger.info("Theatre not found.");
+        if (searchText.isEmpty()) {
+            logger.info("Theatre name cannot be empty.");
             return;
         }
 
+        List<Theatre> theatres =
+                theatreService.getAllTheatres();
+
+        List<Theatre> matchingTheatres =
+                new ArrayList<>();
+
+        for (Theatre theatre : theatres) {
+
+            if (theatre.getName() != null &&
+                    theatre.getName()
+                            .toLowerCase()
+                            .contains(searchText.toLowerCase())) {
+
+                matchingTheatres.add(theatre);
+            }
+        }
+
+        if (matchingTheatres.isEmpty()) {
+            logger.info("No matching theatres found.");
+            return;
+        }
+
+        logger.info("");
+        logger.info("Matching Theatres:");
+
+        for (int i = 0; i < matchingTheatres.size(); i++) {
+
+            Theatre theatre =
+                    matchingTheatres.get(i);
+
+            logger.info(
+                    (i + 1)
+                            + ". "
+                            + theatre.getName()
+            );
+        }
+
+        logger.info("Select theatre:");
+
+        int theatreChoice = scanner.nextInt();
+        scanner.nextLine();
+
+        if (theatreChoice < 1 ||
+                theatreChoice > matchingTheatres.size()) {
+
+            logger.warning("Invalid theatre selection.");
+            return;
+        }
+
+        Theatre theatre =
+                matchingTheatres.get(theatreChoice - 1);
+
+        logger.info("");
+        logger.info(
+                "Selected Theatre: "
+                        + theatre.getName()
+        );
+
         logger.info("Current name: " + theatre.getName());
-        System.out.print("Enter new name: ");
+        logger.info("Enter new name:");
         theatre.setName(scanner.nextLine());
 
         logger.info("Current city: " + theatre.getCity());
-        System.out.print("Enter new city: ");
+        logger.info("Enter new city:");
         theatre.setCity(scanner.nextLine());
 
         logger.info("Current address: " + theatre.getAddress());
-        System.out.print("Enter new address: ");
+        logger.info("Enter new address:");
         theatre.setAddress(scanner.nextLine());
 
         logger.info("Current total seats: " + theatre.getTotalSeats());
-        System.out.print("Enter new total seats: ");
+        logger.info("Enter new total seats:");
         theatre.setTotalSeats(scanner.nextInt());
         scanner.nextLine();
 
@@ -204,30 +266,122 @@ public class TheatreController {
         logger.info("");
         logger.info("========== DELETE THEATRE ==========");
 
-        System.out.print("Enter theatre ID: ");
+        logger.info("Enter theatre name:");
 
-        int theatreId = scanner.nextInt();
-        scanner.nextLine();
+        String searchText = scanner.nextLine().trim();
 
-        Theatre theatre =
-                theatreService.getTheatreById(theatreId);
-
-        if (theatre == null) {
-            logger.info("Theatre not found.");
+        if (searchText.isEmpty()) {
+            logger.info("Theatre name cannot be empty.");
             return;
         }
 
-        logger.info("Theatre: " + theatre.getName());
+        List<Theatre> theatres =
+                theatreService.getAllTheatres();
 
-        System.out.print(
-                "Are you sure you want to delete this theatre? (Y/N): "
+        List<Theatre> matchingTheatres =
+                new ArrayList<>();
+
+        for (Theatre theatre : theatres) {
+
+            if (theatre.getName() != null &&
+                    theatre.getName()
+                            .toLowerCase()
+                            .contains(searchText.toLowerCase())) {
+
+                matchingTheatres.add(theatre);
+            }
+        }
+
+        if (matchingTheatres.isEmpty()) {
+            logger.info("No matching theatres found.");
+            return;
+        }
+
+        logger.info("");
+        logger.info("Matching Theatres:");
+
+        for (int i = 0; i < matchingTheatres.size(); i++) {
+
+            Theatre theatre =
+                    matchingTheatres.get(i);
+
+            logger.info(
+                    (i + 1)
+                            + ". "
+                            + theatre.getName()
+            );
+        }
+
+        logger.info("Select theatre:");
+
+        int theatreChoice = scanner.nextInt();
+        scanner.nextLine();
+
+        if (theatreChoice < 1 ||
+                theatreChoice > matchingTheatres.size()) {
+
+            logger.warning("Invalid theatre selection.");
+            return;
+        }
+
+        Theatre theatre =
+                matchingTheatres.get(theatreChoice - 1);
+
+        logger.info("");
+        logger.info(
+                "Selected Theatre: "
+                        + theatre.getName()
+        );
+
+        List<Seat> seats =
+                seatService.getAllSeats();
+
+        for (Seat seat : seats) {
+
+            if (seat.getTheatreId() == theatre.getTheatreId()) {
+
+                logger.info("");
+                logger.info(
+                        "Cannot delete theatre because it is used by one or more shows."
+                );
+                logger.info(
+                        "Delete the related shows and seats first."
+                );
+
+                return;
+            }
+        }
+
+        List<Show> shows =
+                showService.getAllShows();
+
+        for (Show show : shows) {
+
+            if (show.getTheatreId() == theatre.getTheatreId()) {
+
+                logger.info("");
+                logger.info(
+                        "Cannot delete theatre because it is used by one or more shows."
+                );
+                logger.info(
+                        "Delete the related shows first."
+                );
+
+                return;
+            }
+        }
+
+        logger.info(
+                "Are you sure you want to delete this theatre? (Y/N):"
         );
 
         String confirmation = scanner.nextLine();
 
         if (confirmation.equalsIgnoreCase("Y")) {
 
-            theatreService.deleteTheatre(theatreId);
+            theatreService.deleteTheatre(
+                    theatre.getTheatreId()
+            );
 
             logger.info("Theatre deleted successfully.");
 
