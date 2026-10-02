@@ -9,7 +9,7 @@ import com.movieticket.service.BookingService;
 import com.movieticket.service.PaymentService;
 import com.movieticket.model.Booking;
 import com.movieticket.model.Payment;
-
+import com.movieticket.util.LoggerConfig;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Scanner;
@@ -26,6 +26,7 @@ public class Main {
     public static void main(String[] args) {
 
         boolean running = true;
+        LoggerConfig.configure();
 
         while (running) {
 
@@ -38,7 +39,7 @@ public class Main {
             logger.info("3. Exit");
             logger.info("========================================");
 
-            System.out.print("Enter your choice: ");
+            logger.info("Enter your choice:");
 
             int choice = scanner.nextInt();
             scanner.nextLine();
@@ -109,7 +110,7 @@ public class Main {
             logger.info("7. Back");
             logger.info("========================================");
 
-            System.out.print("Enter your choice: ");
+            logger.info("Enter your choice:");
 
             int choice = scanner.nextInt();
             scanner.nextLine();
