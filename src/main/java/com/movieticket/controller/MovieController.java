@@ -1,10 +1,13 @@
 package com.movieticket.controller;
 
 import com.movieticket.model.Movie;
+import com.movieticket.model.Show;
 import com.movieticket.service.MovieService;
+import com.movieticket.service.ShowService;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Logger;
@@ -15,10 +18,12 @@ public class MovieController {
             Logger.getLogger(MovieController.class.getName());
 
     private final MovieService movieService;
+    private final ShowService showService;
     private final Scanner scanner;
 
     public MovieController() {
         movieService = new MovieService();
+        showService = new ShowService();
         scanner = new Scanner(System.in);
     }
 
@@ -39,7 +44,7 @@ public class MovieController {
             logger.info("5. Delete Movie");
             logger.info("6. Back");
             logger.info("========================================");
-            System.out.print("Enter your choice: ");
+            logger.info("Enter your choice:");
 
             int choice = scanner.nextInt();
             scanner.nextLine();
@@ -90,20 +95,20 @@ public class MovieController {
 
         Movie movie = new Movie();
 
-        System.out.print("Enter title: ");
+        logger.info("Enter title:");
         movie.setTitle(scanner.nextLine());
 
-        System.out.print("Enter language: ");
+        logger.info("Enter language:");
         movie.setLanguage(scanner.nextLine());
 
-        System.out.print("Enter genre: ");
+        logger.info("Enter genre:");
         movie.setGenre(scanner.nextLine());
 
-        System.out.print("Enter duration in minutes: ");
+        logger.info("Enter duration in minutes:");
         movie.setDuration(scanner.nextInt());
         scanner.nextLine();
 
-        System.out.print("Enter release date (YYYY-MM-DD): ");
+        logger.info("Enter release date (YYYY-MM-DD):");
         String releaseDate = scanner.nextLine();
 
         movie.setReleaseDate(
@@ -148,7 +153,7 @@ public class MovieController {
         logger.info("");
         logger.info("========== FIND MOVIE ==========");
 
-        System.out.print("Enter movie ID: ");
+        logger.info("Enter movie ID:");
         int movieId = scanner.nextInt();
         scanner.nextLine();
 
@@ -174,37 +179,87 @@ public class MovieController {
         logger.info("");
         logger.info("========== UPDATE MOVIE ==========");
 
-        System.out.print("Enter movie ID: ");
-        int movieId = scanner.nextInt();
-        scanner.nextLine();
+        logger.info("Enter movie name:");
 
-        Movie movie =
-                movieService.getMovieById(movieId);
+        String searchText = scanner.nextLine().trim();
 
-        if (movie == null) {
-            logger.info("Movie not found.");
+        if (searchText.isEmpty()) {
+            logger.info("Movie name cannot be empty.");
             return;
         }
 
+        List<Movie> movies =
+                movieService.getAllMovies();
+
+        List<Movie> matchingMovies = new ArrayList<>();
+
+        for (Movie movie : movies) {
+
+            if (movie.getTitle() != null &&
+                    movie.getTitle()
+                            .toLowerCase()
+                            .contains(searchText.toLowerCase())) {
+
+                matchingMovies.add(movie);
+            }
+        }
+
+        if (matchingMovies.isEmpty()) {
+            logger.info("No matching movies found.");
+            return;
+        }
+
+        logger.info("");
+        logger.info("Matching Movies:");
+
+        for (int i = 0; i < matchingMovies.size(); i++) {
+
+            Movie movie = matchingMovies.get(i);
+
+            logger.info(
+                    (i + 1)
+                            + ". "
+                            + movie.getTitle()
+            );
+        }
+
+        logger.info("Select movie:");
+
+        int movieChoice = scanner.nextInt();
+        scanner.nextLine();
+
+        if (movieChoice < 1 ||
+                movieChoice > matchingMovies.size()) {
+
+            logger.warning("Invalid movie selection.");
+            return;
+        }
+
+        Movie movie =
+                matchingMovies.get(movieChoice - 1);
+
+        logger.info("");
+        logger.info("Selected Movie: " + movie.getTitle());
+
         logger.info("Current title: " + movie.getTitle());
-        System.out.print("Enter new title: ");
+        logger.info("Enter new title:");
         movie.setTitle(scanner.nextLine());
 
         logger.info("Current language: " + movie.getLanguage());
-        System.out.print("Enter new language: ");
+        logger.info("Enter new language:");
         movie.setLanguage(scanner.nextLine());
 
         logger.info("Current genre: " + movie.getGenre());
-        System.out.print("Enter new genre: ");
+        logger.info("Enter new genre:");
         movie.setGenre(scanner.nextLine());
 
         logger.info("Current duration: " + movie.getDuration());
-        System.out.print("Enter new duration in minutes: ");
+        logger.info("Enter new duration in minutes:");
         movie.setDuration(scanner.nextInt());
         scanner.nextLine();
 
         logger.info("Current release date: " + movie.getReleaseDate());
-        System.out.print("Enter new release date (YYYY-MM-DD): ");
+        logger.info("Enter new release date (YYYY-MM-DD):");
 
         String releaseDate = scanner.nextLine();
 
@@ -223,22 +278,89 @@ public class MovieController {
         logger.info("");
         logger.info("========== DELETE MOVIE ==========");
 
-        System.out.print("Enter movie ID: ");
-        int movieId = scanner.nextInt();
-        scanner.nextLine();
+        logger.info("Enter movie name:");
 
-        Movie movie =
-                movieService.getMovieById(movieId);
+        String searchText = scanner.nextLine().trim();
 
-        if (movie == null) {
-            logger.info("Movie not found.");
+        if (searchText.isEmpty()) {
+            logger.info("Movie name cannot be empty.");
             return;
         }
 
-        logger.info("Movie: " + movie.getTitle());
+        List<Movie> movies =
+                movieService.getAllMovies();
 
-        System.out.print(
-                "Are you sure you want to delete this movie? (Y/N): "
+        List<Movie> matchingMovies = new ArrayList<>();
+
+        for (Movie movie : movies) {
+
+            if (movie.getTitle() != null &&
+                    movie.getTitle()
+                            .toLowerCase()
+                            .contains(searchText.toLowerCase())) {
+
+                matchingMovies.add(movie);
+            }
+        }
+
+        if (matchingMovies.isEmpty()) {
+            logger.info("No matching movies found.");
+            return;
+        }
+
+        logger.info("");
+        logger.info("Matching Movies:");
+
+        for (int i = 0; i < matchingMovies.size(); i++) {
+
+            Movie movie = matchingMovies.get(i);
+
+            logger.info(
+                    (i + 1)
+                            + ". "
+                            + movie.getTitle()
+            );
+        }
+
+        logger.info("Select movie:");
+
+        int movieChoice = scanner.nextInt();
+        scanner.nextLine();
+
+        if (movieChoice < 1 ||
+                movieChoice > matchingMovies.size()) {
+
+            logger.warning("Invalid movie selection.");
+            return;
+        }
+
+        Movie movie =
+                matchingMovies.get(movieChoice - 1);
+
+        logger.info("");
+        logger.info("Selected Movie: " + movie.getTitle());
+
+        List<Show> shows =
+                showService.getAllShows();
+
+        for (Show show : shows) {
+
+            if (show.getMovieId() == movie.getMovieId()) {
+
+                logger.info("");
+                logger.info(
+                        "Cannot delete movie because it is used by one or more shows."
+                );
+                logger.info(
+                        "Delete the related shows first."
+                );
+
+                return;
+            }
+        }
+
+        logger.info(
+                "Are you sure you want to delete this movie? (Y/N):"
         );
 
         String confirmation =
@@ -246,7 +368,7 @@ public class MovieController {
 
         if (confirmation.equalsIgnoreCase("Y")) {
 
-            movieService.deleteMovie(movieId);
+            movieService.deleteMovie(movie.getMovieId());
 
             logger.info("");
             logger.info("Movie deleted successfully.");
