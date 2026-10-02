@@ -1,6 +1,7 @@
 package com.movieticket.service;
 
 import com.movieticket.dao.BookingDAO;
+import com.movieticket.exception.MovieTicketException;
 import com.movieticket.model.BookedSeat;
 import com.movieticket.model.Booking;
 import com.movieticket.model.Payment;
@@ -87,25 +88,33 @@ public class BookingService {
             Payment payment) throws SQLException {
 
         if (seatIds == null || seatIds.isEmpty()) {
-            return false;
+            throw new MovieTicketException(
+                    "Please select at least one seat."
+            );
         }
 
         if (payment == null) {
-            return false;
+            throw new MovieTicketException(
+                    "Payment information is required."
+            );
         }
 
         // Prevent selecting the same seat more than once
         Set<Integer> uniqueSeatIds = new HashSet<>(seatIds);
 
         if (uniqueSeatIds.size() != seatIds.size()) {
-            return false;
+            throw new MovieTicketException(
+                    "Duplicate seats cannot be selected."
+            );
         }
 
         // Find the selected show
         Show show = showService.getShowById(booking.getShowId());
 
         if (show == null) {
-            return false;
+            throw new MovieTicketException(
+                    "Selected show was not found."
+            );
         }
 
         // Find seats already booked for this show
@@ -120,24 +129,32 @@ public class BookingService {
         for (Integer seatId : seatIds) {
 
             if (seatId == null) {
-                return false;
+                throw new MovieTicketException(
+                        "Invalid seat selected."
+                );
             }
 
             // Seat is already booked
             if (bookedSeatIds.contains(seatId)) {
-                return false;
+                throw new MovieTicketException(
+                        "Selected seat is already booked."
+                );
             }
 
             Seat seat = seatService.getSeatById(seatId);
 
             // Seat does not exist
             if (seat == null) {
-                return false;
+                throw new MovieTicketException(
+                        "Selected seat was not found."
+                );
             }
 
             // Seat must belong to the show's theatre
             if (seat.getTheatreId() != show.getTheatreId()) {
-                return false;
+                throw new MovieTicketException(
+                        "Selected seat does not belong to this theatre."
+                );
             }
 
             totalAmount =
@@ -185,7 +202,9 @@ public class BookingService {
                 paymentService.processPayment(payment);
 
         if (!paymentSuccessful) {
-            return false;
+            throw new MovieTicketException(
+                    "Payment processing failed."
+            );
         }
 
         // Payment successful → confirm booking
