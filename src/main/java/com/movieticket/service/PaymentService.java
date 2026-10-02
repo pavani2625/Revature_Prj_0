@@ -1,6 +1,7 @@
 package com.movieticket.service;
 
 import com.movieticket.dao.PaymentDAO;
+import com.movieticket.exception.MovieTicketException;
 import com.movieticket.model.Payment;
 
 import java.sql.SQLException;
@@ -27,19 +28,30 @@ public class PaymentService {
     // PROCESS PAYMENT
     public boolean processPayment(Payment payment) throws SQLException {
 
+        if (payment == null) {
+            throw new MovieTicketException(
+                    "Payment information is required."
+            );
+        }
+
         if (payment.getPaymentMethod() == null ||
                 payment.getPaymentMethod().trim().isEmpty()) {
 
-            return false;
+            throw new MovieTicketException(
+                    "Payment method is required."
+            );
         }
 
         String paymentMethod =
                 payment.getPaymentMethod().trim().toUpperCase();
 
         if (!paymentMethod.equals("UPI") &&
-                !paymentMethod.equals("CARD")) {
+                !paymentMethod.equals("CARD") &&
+                !paymentMethod.equals("CASH")) {
 
-            return false;
+            throw new MovieTicketException(
+                    "Invalid payment method. Use UPI, CARD or CASH."
+            );
         }
 
         payment.setPaymentMethod(paymentMethod);

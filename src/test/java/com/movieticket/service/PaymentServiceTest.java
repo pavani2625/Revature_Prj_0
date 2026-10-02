@@ -1,6 +1,7 @@
 package com.movieticket.service;
 
 import com.movieticket.dao.PaymentDAO;
+import com.movieticket.exception.MovieTicketException;
 import com.movieticket.model.Payment;
 import org.junit.jupiter.api.Test;
 
@@ -93,6 +94,33 @@ public class PaymentServiceTest {
     }
 
     @Test
+    void testProcessPaymentWithCash() throws SQLException {
+
+        PaymentDAO mockPaymentDAO =
+                mock(PaymentDAO.class);
+
+        PaymentService paymentService =
+                new PaymentService(mockPaymentDAO);
+
+        Payment payment = new Payment();
+
+        payment.setBookingId(3);
+        payment.setAmount(new BigDecimal("250.00"));
+        payment.setPaymentMethod("CASH");
+        payment.setPaymentDate(LocalDateTime.now());
+
+        boolean result =
+                paymentService.processPayment(payment);
+
+        assertTrue(result);
+        assertEquals("CASH", payment.getPaymentMethod());
+        assertEquals("SUCCESS", payment.getPaymentStatus());
+
+        verify(mockPaymentDAO)
+                .addPayment(payment);
+    }
+
+    @Test
     void testProcessPaymentWithInvalidMethod()
             throws SQLException {
 
@@ -106,13 +134,13 @@ public class PaymentServiceTest {
 
         payment.setBookingId(1);
         payment.setAmount(new BigDecimal("300.00"));
-        payment.setPaymentMethod("CASH");
+        payment.setPaymentMethod("INVALID");
         payment.setPaymentDate(LocalDateTime.now());
 
-        boolean result =
-                paymentService.processPayment(payment);
-
-        assertFalse(result);
+        assertThrows(
+                MovieTicketException.class,
+                () -> paymentService.processPayment(payment)
+        );
 
         verify(mockPaymentDAO, never())
                 .addPayment(payment);
